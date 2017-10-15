@@ -1,0 +1,47 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<!--<link rel="import" href="https://cdn.rawgit.com/download/polymer-cdn/1.5.0/lib/iron-ajax/iron-ajax.html">-->
+
+<link rel="import" href="https://polygit.org/polymer+v2.0.0/shadycss+webcomponents+1.0.0/components/polymer/polymer-element.html">
+<link rel="import" href="https://polygit.org/polymer+v2.0.0/shadycss+webcomponents+1.0.0/components/iron-ajax/iron-ajax.html">
+
+<dom-module id="owox-polymer-app">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]!</h2>
+
+    <iron-ajax
+            auto="" url="https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5"
+            handle-as="json"
+            last-response="{{ajaxResponse}}"></iron-ajax>
+
+    <template is="dom-repeat" items="[[ajaxResponse]]">
+      <span>[[item.ccy]]</span>
+    </template>
+    <h2>Hello [[prop1]]!..[[ajaxResponse]]</h2>
+
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class OwoxPolymerApp extends Polymer.Element {
+      static get is() { return 'owox-polymer-app'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'owox-polymer-app'
+          }
+        };
+      }
+    }
+
+    window.customElements.define(OwoxPolymerApp.is, OwoxPolymerApp);
+  </script>
+</dom-module>

@@ -1,0 +1,259 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shared-styles.html">
+
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+<link rel="import" href="../bower_components/paper-input/index.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/platform.js/platform.js">
+<link rel="import" href="../bower_components/vaadin-valo-theme/vaadin-grid.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
+
+<script src="//d3js.org/d3.v4.min.js"></script>
+
+<dom-module id="my-view2">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+
+        padding: 10px;
+      }
+      vaadin-grid {
+        /*height: auto;*/
+        /*max-height: 600px;*/
+      }
+      paper-input{
+        margin-bottom: 20px;
+        max-width: 300px;
+      }
+      paper-button {
+        font-family: 'Roboto', 'Noto', sans-serif;
+        font-weight: normal;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+        margin-bottom: 20px;
+      }
+      paper-button.indigo {
+        background-color: var(--paper-indigo-500);
+        color: white;
+        --paper-button-raised-keyboard-focus: {
+          background-color: var(--paper-pink-a200) !important;
+          color: white !important;
+        };
+      }
+      paper-button.indigo:hover {
+        background-color: var(--paper-indigo-400);
+      }
+      paper-button.indigo.disabled{
+        background: #eaeaea;
+        color: #fff;
+      }
+
+      .arc text {
+        font: 10px sans-serif;
+        text-anchor: middle;
+      }
+      .arc path {
+        stroke: #fff;
+      }
+
+      .population-data{
+        display: flex;
+        justify-content: space-between;
+        width: 150px;
+      }
+      .population-data_males{
+        color: #4285f4;
+      }
+      .population-data_females{
+        color: #ff8c00;
+      }
+    </style>
+
+    <div class="card">
+
+      <h1>Retrieve population table for all countries and a specific age group in the given year</h1>
+      <paper-input
+              value="[[year]]"
+              user = value
+              id="yearInput"
+              label="Year"
+              char-counter
+              auto-validate
+              allowed-pattern="[0-9]"
+              pattern="19[0-9]{2}|2[0-9]{3}"
+              error-message="Enter from 1950 to present time"
+              type="string"
+              maxlength="4"></paper-input>
+      <paper-input
+              value="[[age]]"
+              type="string"
+              id="ageInput"
+              label="Age"
+              auto-validate
+              allowed-pattern="[0-9]"
+              error-message="No valid age, enter 1-99"
+              char-counter maxlength="2"></paper-input>
+      <paper-input
+              value="[[country]]"
+              id="countryInput"
+              label="Enter country"
+              auto-validate
+              allowed-pattern="[a-zA-Z]"
+              error-message="No valid country"
+              type="string"></paper-input>
+
+      <paper-button on-click="_refreshTable" raised class="indigo">Load data</paper-button>
+
+      <iron-ajax
+              id="populationId"
+              auto="" url="http://api.population.io/1.0/population/[[year]]/aged/[[age]]/?format=json"
+              handle-as="json"
+              last-response="{{populations}}"></iron-ajax>
+      <vaadin-grid max-width="500px" aria-label="Retrieve population table for all countries and a specific age group in the given year" items="{{populations}}">
+        <vaadin-grid-column>
+          <template class="header">Country</template>
+          <template>[[item.country]]</template>
+          <template class="footer">Country</template>
+        </vaadin-grid-column>
+        <vaadin-grid-column>
+          <template class="header">Males</template>
+          <template>{{item.males}}</template>
+          <template class="footer">Males</template>
+        </vaadin-grid-column>
+        <vaadin-grid-column>
+          <template class="header">Females</template>
+          <template>[[item.females]]</template>
+          <template class="footer">Females</template>
+        </vaadin-grid-column>
+        <vaadin-grid-column>
+          <template class="header">Total</template>
+          <template>[[item.total]]</template>
+          <template class="footer">Total</template>
+        </vaadin-grid-column>
+      </vaadin-grid>
+
+      <br>
+      <br>
+
+      <iron-ajax
+              id="populationCountryId"
+              auto="" url="http://api.population.io/1.0/population/[[year]]/[[country]]/[[age]]/"
+              handle-as="json"
+              last-response="{{populationsCountry}}"
+              on-response="_refreshTable"></iron-ajax>
+
+      <template is="dom-repeat" items="{{populationsCountry}}">
+        <div class="population-data ">country: <span>{{item.country}}</span></div>
+        <div class="population-data population-data_females">females: <span>{{item.females}}</span></div>
+        <div class="population-data population-data_males">males: <span>{{item.males}}</span></div>
+        <div class="population-data ">total: <span>{{item.total}}</span></div>
+      </template>
+
+      <div id="populationChart">
+        <!--<svg id="populationChartSvg" width="960" height="500"></svg>-->
+      </div>
+
+    </div>
+  </template>
+
+  <script>
+    class MyView2 extends Polymer.Element {
+      static get is() { return 'my-view2'; }
+
+      constructor() {
+        super();
+        this.year = '1980';
+        this.age = '18';
+        this.country = "Ukraine";
+        this.countryMales = "";
+        this.countryFemales = "";
+        this.counter = false;
+      }
+
+      ready(){
+          super.ready();
+      }
+
+      _handleResponse(event){
+          this.countryMales = event.detail.response[0].males;
+          this.countryFemales = event.detail.response[0].females;
+      }
+
+      _refreshTable(event) {
+          this.year = this.$.yearInput.value;
+          this.age = this.$.ageInput.value;
+          this.country = this.$.countryInput.value;
+          /////////////////////////////////////////////////////////////////
+          let males = event.detail.response[0].males,
+              females = event.detail.response[0].females;
+
+          let chartWrap = this.$.populationChart;
+
+          if(this.counter){
+              chartWrap.removeChild(chartWrap.children[0]);
+          }
+
+          let data = [males, females];
+
+          let width = 960,
+              height = 500,
+              radius = Math.min(width, height) / 2;
+
+          let color = d3.scaleOrdinal()
+              .range(["#4285f4", "#ff8c00",]);
+
+          let arc = d3.arc()
+              .outerRadius(radius - 10)
+              .innerRadius(0);
+
+          let labelArc = d3.arc()
+              .outerRadius(radius - 40)
+              .innerRadius(radius - 40);
+
+          let pie = d3.pie()
+              .sort(null)
+              .value(function(d) { return d; });
+
+          let svg = d3.select(chartWrap).append("svg")
+              .attr("width", width)
+              .attr("height", height)
+              .append("g")
+              .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+          let g = svg.selectAll(".arc")
+              .data(pie(data))
+              .enter().append("g")
+              .attr("class", "arc");
+
+          g.append("path")
+              .attr("d", arc)
+              .style("fill", function(d) { return color(d.data); });
+
+          g.append("text")
+              .attr("transform", function(d) { return "translate(" + labelArc.centroid(d) + ")"; })
+              .attr("dy", ".35em")
+              .text(function(d) { return d.data; });
+
+          this.counter = true;
+      }
+
+
+    }
+
+    window.customElements.define(MyView2.is, MyView2);
+  </script>
+</dom-module>

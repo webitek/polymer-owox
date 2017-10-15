@@ -1,0 +1,247 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<!--<link rel="import" href="../bower_components/paper-styles/index.html">-->
+<link rel="import" href="shared-styles.html">
+<!--<link rel="import" href="https://polygit.org/polymer+v2.0.0/shadycss+webcomponents+1.0.0/components/polymer/polymer-element.html">-->
+<!--<link rel="import" href="https://polygit.org/polymer+v2.0.0/shadycss+webcomponents+1.0.0/components/iron-ajax/iron-ajax.html">-->
+<!--<base href="https://raw-dot-custom-elements.appspot.com/PolymerElements/paper-input/v2.0.2/paper-input/">-->
+<script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+
+<link rel="import" href="../bower_components/paper-input/index.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-datatable/paper-datatable.html">
+
+<link rel="import" href="../bower_components/vaadin-valo-theme/vaadin-grid.html">
+<link rel="import" href="../bower_components/vaadin-grid/vaadin-grid.html">
+
+<link rel="import" href="../bower_components/platform.js/platform.js">
+
+<script src="https://d3js.org/d3.v4.js"></script>
+
+
+<dom-module id="my-view1">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      paper-input {
+        max-width: 400px;
+      }
+      iron-icon, div[suffix] {
+        color: hsl(0, 0%, 50%);
+        margin-right: 12px;
+      }
+      paper-button {
+        font-family: 'Roboto', 'Noto', sans-serif;
+        font-weight: normal;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+      }
+      paper-button.indigo {
+        background-color: var(--paper-indigo-500);
+        color: white;
+        --paper-button-raised-keyboard-focus: {
+          background-color: var(--paper-pink-a200) !important;
+          color: white !important;
+        };
+      }
+      paper-button.indigo:hover {
+        background-color: var(--paper-indigo-400);
+      }
+      paper-button.indigo.disabled{
+        background: #eaeaea;
+        color: #fff;
+      }
+      vaadin-grid {
+        height: auto;
+      }
+      /**********************/
+      svg{
+        transition: .3s;
+      }
+      .bar {
+        fill: #257f68;
+      }
+      .sale{
+        fill: #25477f;
+      }
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #D4D8DA;
+        stroke-width: 1px;
+        shape-rendering: crispEdges;
+      }
+      .x path {
+        display: none;
+      }
+      .toolTip {
+        position: absolute;
+        display: none;
+        min-width: 80px;
+        height: auto;
+        background: none repeat scroll 0 0 #ffffff;
+        border: 1px solid #6F257F;
+        padding: 14px;
+        text-align: center;
+      }
+    </style>
+
+    <div class="card" id="card">
+      <h1>Exchange rates of PrivatBank</h1>
+
+      <div id="chartWrap">
+        <svg id="chart" class="[[chart]]" width="960" height="0"></svg>
+      </div>
+      <!--<div>[[chart]]</div>
+      <div>[[name.first]] [[name.last]]</div>
+
+      <p>value from input <b>{{city}}</b></p>
+      <paper-input value="{{city}}" label="City"></paper-input>
+      <paper-button on-click="handleClick" raised class="indigo">Submit</paper-button>-->
+
+
+      <iron-ajax
+              auto="" url="https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5"
+              handle-as="json"
+              last-response="{{curses}}"></iron-ajax>
+      <vaadin-grid max-width="500px" aria-label="Exchange rates of PrivatBank" items="[[curses]]">
+        <vaadin-grid-column>
+          <template class="header">Currency</template>
+          <template>[[item.ccy]]</template>
+        </vaadin-grid-column>
+        <vaadin-grid-column>
+          <template class="header">Buy</template>
+          <template>[[item.buy]]</template>
+        </vaadin-grid-column>
+        <vaadin-grid-column>
+          <template class="header">Sale</template>
+          <template>[[item.sale]]</template>
+        </vaadin-grid-column>
+      </vaadin-grid>
+
+      <br>
+      <br>
+      <paper-button id="myButton" raised class="indigo">Show chart</paper-button>
+      <br>
+      <br>
+    </div>
+  </template>
+
+  <script>
+
+
+    class MyView1 extends Polymer.Element {
+      static get is() { return 'my-view1'; }
+
+      constructor() {
+
+          super();
+//          this.name = {first: 'Kai', last: 'Li'};
+//          this.city = 'some value';
+//          this.chart = 'chart'
+      }
+      ready() {
+          super.ready();
+//          this.$.myButton.addEventListener('click', e => {this._myClick(e)});
+          this.$.myButton.addEventListener('click', e => {this._showChart(e)});
+      }
+
+      handleClick() {
+          console.log(this.city);
+//          console.log(this.privatChart);
+      }
+      _myClick(e) {
+          console.info(e.target.id + ' was clicked.');
+      }
+      _showChart(e) {
+          this.$.myButton.classList.add("disabled");
+          this.$.myButton.setAttribute("disabled","disabled");
+          let svg = d3.select(this.$.chart).attr("height","500"),
+              margin = {top: 20, right: 20, bottom: 30, left: 80},
+              width = +svg.attr("width") - margin.left - margin.right,
+              height = +svg.attr("height") - margin.top - margin.bottom;
+
+          let tooltip = d3.select(this.$.chartWrap).append("div").attr("class", "toolTip");
+
+          d3.select(this.$.chartWrap).append("div").attr("class", "description");
+
+          let x = d3.scaleLinear().range([0, width]);
+          let y = d3.scaleBand().range([height, 0]);
+
+          let g = svg.append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          d3.json("privat-data.json", function(error, data) {
+              if (error) throw error;
+
+              data.sort(function(a, b) { return a.buy - b.buy; });
+
+              x.domain([0, d3.max(data, function(d) {return d.buy; })]);
+              y.domain(data.map(function(d) { return d.ccy; })).padding(0.1);
+
+              g.append("g")
+                  .attr("class", "x axis")
+                  .attr("transform", "translate(0," + height + ")")
+                  .call(d3.axisBottom(x).ticks(5).tickFormat(function(d) {
+                      return parseInt(d); }).tickSizeInner([-height]));
+
+              g.append("g")
+                  .attr("class", "y axis")
+                  .call(d3.axisLeft(y));
+
+
+              g.selectAll(".bar")
+                  .data(data)
+                  .enter().append("rect")
+                  .attr("class", "bar")
+                  .attr("x", 0)
+                  .attr("height", y.bandwidth()/2)
+                  .attr("y", function(d) { return y(d.ccy); })
+                  .attr("width", function(d) { return x(d.buy); })
+                  .on("mousemove", function(d){
+                      tooltip
+                          .style("left", d3.event.pageX - 250 + "px")
+                          .style("top", Math.floor(this.getAttribute('y')) + 120 + "px")
+                          .style("display", "inline-block")
+                          .html("Buy " + (d.ccy) + "<br>" + (+d.buy).toFixed(3) + " грн");
+                  })
+                  .on("mouseout", function(d){ tooltip.style("display", "none");});
+
+              g.selectAll(".sale")
+                  .data(data)
+                  .enter().append("rect")
+                  .attr("class", "sale")
+                  .attr("x", 0)
+                  .attr("height", y.bandwidth()/2)
+                  .attr("y", function(d) { return y(d.ccy) + y.bandwidth()/2; })
+                  .attr("width", function(d) { return x(d.sale); })
+                  .on("mousemove", function(d){
+                      tooltip
+                          .style("left", d3.event.pageX - 250 + "px")
+                          .style("top", Math.floor(this.getAttribute('y')) + 120 + "px")
+                          .style("display", "inline-block")
+                          .html("Sale " + (d.ccy) + "<br>" + (+d.sale).toFixed(3) + " грн");
+                  })
+                  .on("mouseout", function(d){ tooltip.style("display", "none");});
+          });
+      }
+    }
+
+    window.customElements.define(MyView1.is, MyView1);
+
+  </script>
+</dom-module>
